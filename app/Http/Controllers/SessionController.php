@@ -7,6 +7,13 @@ use Auth;
 
 class SessionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('guest', [
+            'only' => ['create']
+        ]);
+    }
+    
     public function create()
     {
         return view('sessions.create');
@@ -23,7 +30,7 @@ class SessionController extends Controller
                 'password' => $request->password];
         if(Auth::attempt($data, $request->has('remember'))){
             session()->flash('success', ' Welcome back!');
-            return redirect()->route('users.show', [Auth::user()]);
+            return redirect()->intended(route('users.show', [Auth::user()]));
         } else{
             session()->flash('danger', 'email or password input wrong , please check it !');
             return redirect()->back();
