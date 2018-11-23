@@ -6,13 +6,14 @@ use Illuminate\Http\Request;
 use App\Http\Requests;
 use App\Models\User;
 use Auth;
+use Mail;
 
 class UsersController extends Controller
 {
     public function __construct()
     {
         $this->middleware('auth', [
-            'except' => ['show', 'create', 'store', 'index']
+            'except' => ['show', 'create', 'store', 'index', 'confirmEmail']
         ]);
 
         $this->middleware('guest', [
@@ -48,9 +49,11 @@ class UsersController extends Controller
                 'email' => $request->email,
                 'password' => bcrypt($request->password)];
         $user = User::create($data);
-        session()->flash('success', 'Account create success! ');
+
+        $this->sendEmailConfirmationTo($user);
+        session()->flash('success', 'Your verification code have been sended to your email, please click it. ');
         
-        return redirect('users.show', [$user]);
+        return redirect('/');
     }
 
     public function edit(User $user)
@@ -85,5 +88,32 @@ class UsersController extends Controller
         $user->delete();
         session()->flash('success', '成功删除用户！');
         return back();
+    }
+
+    public function sendEmailConfirmationTo($user)
+    {
+        $view = 'emails.confirm';
+        $data = compact('user');
+        $from = 'admin@owlrock.xyz';
+        $name = 'owlrocks';
+        $to = $user->email;
+        $subject = 'Thanks for your registration in our website ';
+
+        Mail::send($view, $data, function ($message) use ($from, $name, $to, $subject) {
+            $message->from($from, $name)->to($to)->subject($subject);
+        });
+    }
+
+    public function confirmEmail($token)
+    {
+        $user = User::where('activation_token', $token)->firstOrFail();
+
+        $user->activated = true;
+        $user->activation_token = null;
+        $user->save();
+
+        Auth::login($user);
+        session()->flash('success', 'Congratualtions ， you are now active your account');
+        return redirect()->route('users.show', [$user]);
     }
 }
