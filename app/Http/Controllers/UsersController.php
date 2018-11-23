@@ -94,7 +94,7 @@ class UsersController extends Controller
     {
         $view = 'emails.confirm';
         $data = compact('user');
-        $from = 'admin@owlrock.xyz';
+        // $from = 'admin@owlrock.xyz';  //环境变量配置好发件人即可忽略此配置
         $name = 'owlrocks';
         $to = $user->email;
         $subject = 'Thanks for your registration in our website ';
